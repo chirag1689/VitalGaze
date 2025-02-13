@@ -54,11 +54,6 @@ python main.py
 
 ---
 
-## 🖼️ Screenshots
-![Screenshot 1](![image](https://github.com/user-attachments/assets/8b204738-3fbc-41a7-8b7c-e96c75e68c36))  
-
----
-
 ## 📜 Code Structure
 ```
 📂 Facial-Health-Analyzer
