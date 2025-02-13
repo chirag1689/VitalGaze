@@ -85,5 +85,5 @@ Contributions are welcome! Please follow these steps:
 
 
 ## 🙋 Contact
-📧 guptachirag57@gmail.com _(Replace with actual email)_  
+📧 guptachirag57@gmail.com  
 🌎 [LinkedIn]([https://www.linkedin.com/in/chirag-gupta/](https://www.linkedin.com/in/chirag-gupta-20640b24a/))  
