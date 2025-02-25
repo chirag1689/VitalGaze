@@ -8,6 +8,7 @@ from tkinter import ttk, Label
 from PIL import Image, ImageTk
 import threading
 from queue import Queue
+import json
 
 class ResultWindow:
     def __init__(self, image, results):
@@ -64,7 +65,7 @@ class ResultWindow:
         
         self._add_result("Skin Redness", 
                         f"{results['skin_conditions']['redness_level']:.1f}",
-                        results['skin_conditions']['redness_level'] > 150)
+                        results['skin_conditions']['redness_level'] > 40)
         
         self._add_result("Eye Droopiness", 
                         f"{results['eye_analysis']['eye_ratio']:.2f}",
@@ -170,7 +171,8 @@ class FacialHealthAnalyzer:
             'skin_conditions': skin_analysis,
             'eye_analysis': eye_analysis,
             'is_toxicated': is_toxicated,
-            'is_abnormal': is_abnormal
+            'is_abnormal': is_abnormal,
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
         # Draw findings on frame
@@ -297,6 +299,26 @@ class FacialHealthAnalyzer:
             cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
         
         return frame
+    
+    def save_results_as_json(self, results, filename):
+        """Save analysis results as JSON file"""
+        # Create a copy of results that can be serialized to JSON
+        serializable_results = {
+            'timestamp': results['timestamp'],
+            'skin_conditions': {
+                'redness_level': float(results['skin_conditions']['redness_level']),
+                'pimples_detected': results['skin_conditions']['pimples_detected']
+            },
+            'eye_analysis': {
+                'eye_ratio': float(results['eye_analysis']['eye_ratio']),
+                'redness': float(results['eye_analysis']['redness'])
+            },
+            'is_toxicated': results['is_toxicated'],
+            'is_abnormal': results['is_abnormal']
+        }
+        
+        with open(filename, 'w') as f:
+            json.dump(serializable_results, f, indent=4)
 
 def show_results(image, results):
     """Show results in a new window"""
@@ -325,9 +347,15 @@ def main():
                               args=(analyzed_frame, results),
                               daemon=True).start()
                 
-                # Save results
+                # Save image results
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                cv2.imwrite(f"analysis_results/analyzed_{timestamp}.jpg", analyzed_frame)
+                image_filename = f"{analyzer.output_dir}/analyzed_{timestamp}.jpg"
+                cv2.imwrite(image_filename, analyzed_frame)
+                
+                # Save JSON results
+                json_filename = f"{analyzer.output_dir}/results_{timestamp}.json"
+                analyzer.save_results_as_json(results, json_filename)
+                print(f"Analysis results saved to {json_filename}")
             else:
                 print("No face detected in the image")
                 

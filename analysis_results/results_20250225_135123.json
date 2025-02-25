@@ -1,0 +1,13 @@
+{
+    "timestamp": "2025-02-25 13:51:20",
+    "skin_conditions": {
+        "redness_level": 39.07000657239171,
+        "pimples_detected": 0
+    },
+    "eye_analysis": {
+        "eye_ratio": 1.4243786736328024,
+        "redness": 56.3425
+    },
+    "is_toxicated": false,
+    "is_abnormal": false
+}
