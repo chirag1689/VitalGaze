@@ -11,7 +11,7 @@ from queue import Queue
 import json
 
 class ResultWindow:
-    def __init__(self, image, results):
+    def __init__(self, image, results, json_response):
         # Create main window
         self.root = tk.Tk()
         self.root.title("Analysis Results")
@@ -91,6 +91,19 @@ class ResultWindow:
         status_value = ttk.Label(status_frame, text=status_text, style=status_style)
         status_value.pack(side=tk.LEFT)
         
+        # JSON display section
+        json_frame = ttk.Frame(self.main_frame)
+        json_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        json_label = ttk.Label(json_frame, text="JSON Response:", style='Header.TLabel')
+        json_label.pack(anchor='w', pady=(10, 5))
+        
+        # Create text area for JSON display
+        json_text = tk.Text(json_frame, height=10, width=70, wrap='word')
+        json_text.insert(tk.END, json_response)
+        json_text.config(state='disabled')  # Make read-only
+        json_text.pack(fill=tk.BOTH, expand=True)
+        
         # Close button
         close_button = ttk.Button(self.main_frame, text="Close", 
                                 command=self.root.destroy)
@@ -149,7 +162,7 @@ class FacialHealthAnalyzer:
         results = self.face_mesh.process(rgb_frame)
         
         if not results.multi_face_landmarks:
-            return frame, None
+            return frame, None, None
             
         landmarks = results.multi_face_landmarks[0]
         
@@ -175,10 +188,13 @@ class FacialHealthAnalyzer:
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
+        # Create JSON response
+        json_response = self.create_json_response(analysis_results)
+        
         # Draw findings on frame
         frame = self.draw_analysis_on_frame(frame, landmarks, analysis_results)
         
-        return frame, analysis_results
+        return frame, analysis_results, json_response
     
     def detect_toxication(self, skin_analysis, eye_analysis):
         """Detect if person shows signs of toxication"""
@@ -300,8 +316,8 @@ class FacialHealthAnalyzer:
         
         return frame
     
-    def save_results_as_json(self, results, filename):
-        """Save analysis results as JSON file"""
+    def create_json_response(self, results):
+        """Create a JSON response string from the analysis results"""
         # Create a copy of results that can be serialized to JSON
         serializable_results = {
             'timestamp': results['timestamp'],
@@ -317,12 +333,12 @@ class FacialHealthAnalyzer:
             'is_abnormal': results['is_abnormal']
         }
         
-        with open(filename, 'w') as f:
-            json.dump(serializable_results, f, indent=4)
+        # Convert to formatted JSON string
+        return json.dumps(serializable_results, indent=4)
 
-def show_results(image, results):
+def show_results(image, results, json_response):
     """Show results in a new window"""
-    ResultWindow(image, results)
+    ResultWindow(image, results, json_response)
 
 def main():
     analyzer = FacialHealthAnalyzer()
@@ -339,23 +355,22 @@ def main():
         key = cv2.waitKey(1) & 0xFF
         if key == ord('c'):
             # Analyze captured frame
-            analyzed_frame, results = analyzer.analyze_face(frame.copy())
+            analyzed_frame, results, json_response = analyzer.analyze_face(frame.copy())
             
             if results is not None:
-                # Start result window in a new thread
-                threading.Thread(target=show_results, 
-                              args=(analyzed_frame, results),
-                              daemon=True).start()
-                
                 # Save image results
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 image_filename = f"{analyzer.output_dir}/analyzed_{timestamp}.jpg"
                 cv2.imwrite(image_filename, analyzed_frame)
                 
-                # Save JSON results
-                json_filename = f"{analyzer.output_dir}/results_{timestamp}.json"
-                analyzer.save_results_as_json(results, json_filename)
-                print(f"Analysis results saved to {json_filename}")
+                # Print JSON response to console
+                print("\nJSON Response:")
+                print(json_response)
+                
+                # Start result window in a new thread
+                threading.Thread(target=show_results, 
+                              args=(analyzed_frame, results, json_response),
+                              daemon=True).start()
             else:
                 print("No face detected in the image")
                 
